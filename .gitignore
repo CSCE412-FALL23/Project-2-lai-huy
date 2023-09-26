@@ -32,3 +32,5 @@
 *.app
 
 *.gpg
+
+/.vscode/
