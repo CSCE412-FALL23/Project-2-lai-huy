@@ -44,9 +44,14 @@ public:
         return *this;
     }
 
-    const size_t& getDuration() const;
+    const size_t& getDuration() const {
+        return this->duration;
+    }
 
-    friend ostream& operator<<(ostream& os, const Request request);
+    friend ostream& operator<<(ostream& os, const Request request) {
+        os << "Request{ipIn=" << request.ipIn << ", ipOut=" << request.ipOut << ", duration=" << to_string(request.duration) << "}";
+        return os;
+    }
 };
 
 #endif // REQUEST_H

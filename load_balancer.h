@@ -55,7 +55,11 @@ public:
     }
 
     void run();
-    void printLog(ostream& os = cout) const;
+
+    void printLog(ostream& os = cout) const {
+        for (const auto& [request, server, time] : this->handled)
+            os << "At " << to_string(time) << " " << server << " processed request " << request << "\n";
+    }
 };
 
 #endif // LOAD_BALANCER_H

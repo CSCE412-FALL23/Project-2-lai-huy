@@ -52,16 +52,36 @@ public:
 		return *this;
 	}
 
-	void setRequest(const Request& request);
+	void setRequest(const Request& request) {
+		this->curr_request = request;
+		this->time = 0;
+		this->active = true;
+	}
 
-	void setRequest(Request&& request);
+	void setRequest(Request&& request) {
+		this->curr_request = move(request);
+		this->time = 0;
+		this->active = true;
+	}
 
-	void handleCurrentRequest();
+	void handleCurrentRequest(ostream& os = cout) {
+		os << *this << " is handling " << this->curr_request << "\n";
+		if (++this->time == this->curr_request.getDuration())
+			this->active = false;
+	}
 
-	const Request& getRequest() const;
-	bool isRunning() const;
+	const Request& getRequest() const {
+		return this->curr_request;
+	}
 
-	friend ostream& operator<<(ostream& os, const Server& server);
+	bool isRunning() const {
+		return this->active;
+	}
+
+	friend ostream& operator<<(ostream& os, const Server& server) {
+		os << "Server{name = " << server.name << "}";
+		return os;
+	}
 };
 
 #endif // SERVER_H
