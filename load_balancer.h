@@ -45,15 +45,16 @@ private:
     void createServers(size_t num_servers, ostream& os = cout) {
         os << "New webservers created: ";
         for (size_t i = 0; i < num_servers; ++i) {
-            this->servers.at(i) = Server{"S" + to_string(i)};
+            this->servers.emplace_back("S" + to_string(i));
             os << this->servers.at(i);
             if (i != num_servers - 1)
                 cout << ", ";
         }
+        os << "\n";
     }
 public:
     LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {}
-    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests) : runtime{runtime}, clock{0}, servers{vector<Server>(num_servers)}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
+    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests) : runtime{runtime}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
         this->generateRequests(num_requests);
         this->createServers(num_servers);
     }
@@ -93,27 +94,34 @@ public:
         return *this;
     }
 
-    void run() {
+    void run(ostream& os = cout) {
         for (Server& server : this->servers) {
             server.setRequest(this->requests.front());
             this->requests.pop();
         }
 
-        while (!requests.empty()) {
-            if (++this->clock >= this->runtime)
-                break;
-
-            // cout << "Clock:\t" << this->clock << "\n";
-
+        size_t finished_count{};
+        while (++this->clock <= this->runtime) {
+            finished_count = 0;
+            os << "Clock:\t" << this->clock << "\n";
             for (Server& server : this->servers) {
-                if (server.isRunning())
+                if (server.isRunning()) {
                     server.handleCurrentRequest();
-                else {
+                } else {
+                    ++finished_count;
+                    os << server << " has finished running and is waiting for a new request\n";
                     this->handled.emplace_back(server.getRequest(), server, this->clock);
-                    server.setRequest(this->requests.front());
-                    this->requests.pop();
+                    if (!this->requests.empty()) {
+                        server.setRequest(this->requests.front());
+                        this->requests.pop();
+                    }
                 }
+
             }
+            os << "\n";
+
+            if (finished_count == this->servers.size())
+                break;
         }
     }
 
