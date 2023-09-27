@@ -79,7 +79,7 @@ public:
 	}
 
 	friend ostream& operator<<(ostream& os, const Server& server) {
-		os << "Server{name = " << server.name << "}";
+		os << "Server{name=" << server.name << "}";
 		return os;
 	}
 };

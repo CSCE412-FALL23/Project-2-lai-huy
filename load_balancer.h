@@ -4,12 +4,14 @@
 #include <vector>
 #include <queue>
 #include <tuple>
+#include <string>
+#include <sstream>
 #include "server.h"
 
 using std::vector, std::queue;
 using std::string;
 using std::tuple;
-using std::cout;
+using std::cout, std::ostringstream;
 
 class LoadBalancer {
 private:
@@ -18,11 +20,46 @@ private:
 
     vector<Server> servers;
     vector<tuple<Request, Server, size_t>> handled;
+    queue<Request> requests;
+
+    size_t random(size_t min, size_t max) {
+        return min + rand() % (max - min + 1);
+    }
+
+    string generate_IP() {
+        ostringstream oss;
+        oss << random(1, 255) << "." << random(0, 255) << "." << random(0, 255) << "." << random(1, 255);
+        return oss.str();
+    }
+
+    void generateRequests(size_t num_requests, ostream& os = cout) {
+        for (size_t i = 0; i < num_requests; ++i) {
+            Request request{this->generate_IP(), this->generate_IP(), this->random(3, 16)};
+            os << "New request:\t" << request << "\n";
+            this->requests.push(request);
+        }
+        os << "Request queue has been populated with " << to_string(num_requests) << " requests.\n";
+        os << "-----------------------------------------------------------------------------\n\n";
+    }
+
+    void createServers(size_t num_servers, ostream& os = cout) {
+        os << "New webservers created: ";
+        for (size_t i = 0; i < num_servers; ++i) {
+            this->servers.at(i) = Server{"S" + to_string(i)};
+            os << this->servers.at(i);
+            if (i != num_servers - 1)
+                cout << ", ";
+        }
+    }
 public:
-    LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}} {}
-    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests) : runtime{runtime}, clock{0}, servers{vector<Server>(num_servers)}, handled{vector<tuple<Request, Server, size_t>>{}} {}
-    LoadBalancer(const LoadBalancer& other) : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled} {}
-    LoadBalancer(LoadBalancer&& other) : runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)} {
+    LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {}
+    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests) : runtime{runtime}, clock{0}, servers{vector<Server>(num_servers)}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
+        this->generateRequests(num_requests);
+        this->createServers(num_servers);
+    }
+
+    LoadBalancer(const LoadBalancer& other) : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests} {}
+    LoadBalancer(LoadBalancer&& other) : runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)}, requests{move(other.requests)} {
         other.runtime = 0;
         other.clock = 0;
     }
@@ -35,6 +72,7 @@ public:
             this->clock = other.clock;
             this->servers = other.servers;
             this->handled = other.handled;
+            this->requests = other.requests;
         }
 
         return *this;
@@ -46,6 +84,7 @@ public:
             this->clock = other.clock;
             this->servers = move(other.servers);
             this->handled = move(other.handled);
+            this->requests = move(other.requests);
 
             other.runtime = 0;
             other.clock = 0;
@@ -54,7 +93,29 @@ public:
         return *this;
     }
 
-    void run();
+    void run() {
+        for (Server& server : this->servers) {
+            server.setRequest(this->requests.front());
+            this->requests.pop();
+        }
+
+        while (!requests.empty()) {
+            if (++this->clock >= this->runtime)
+                break;
+
+            // cout << "Clock:\t" << this->clock << "\n";
+
+            for (Server& server : this->servers) {
+                if (server.isRunning())
+                    server.handleCurrentRequest();
+                else {
+                    this->handled.emplace_back(server.getRequest(), server, this->clock);
+                    server.setRequest(this->requests.front());
+                    this->requests.pop();
+                }
+            }
+        }
+    }
 
     void printLog(ostream& os = cout) const {
         for (const auto& [request, server, time] : this->handled)

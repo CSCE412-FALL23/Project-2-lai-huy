@@ -25,7 +25,7 @@ int main() {
     loadbalancer.run();
 
     //Once the load balancer stops running, it means that time is up or queue is empty
-    cout << "Done\n";
+    cout << "Done\n\n";
     loadbalancer.printLog();
 
     return 0;
