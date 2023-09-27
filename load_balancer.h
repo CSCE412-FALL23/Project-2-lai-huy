@@ -13,25 +13,62 @@ using std::string;
 using std::tuple;
 using std::cout, std::ostringstream;
 
+/**
+ * @brief The LoadBalancer class represents a load balancer that distributes
+ *        requests to a group of servers and logs their processing.
+ */
 class LoadBalancer {
 private:
+    /**
+     * @brief The total runtime of the load balancer.
+     */
     size_t runtime;
+
+    /**
+     * @brief The current time elapsed in the load balancer.
+     */
     size_t clock;
 
+    /**
+     * @brief The list of servers managed by the load balancer.
+     */
     vector<Server> servers;
+
+    /**
+     * @brief Records of handled requests.
+     */
     vector<tuple<Request, Server, size_t>> handled;
+
+    /**
+     * @brief Queue of incoming requests.
+     */
     queue<Request> requests;
 
+    /**
+     * @brief Generates a random number between min and max (inclusive).
+     * @param min The minimum value of the range.
+     * @param max The maximum value of the range.
+     * @return A random number within the specified range.
+     */
     size_t random(size_t min, size_t max) {
         return min + rand() % (max - min + 1);
     }
 
+    /**
+     * @brief Generates a random IP address in the format "X.X.X.X".
+     * @return A randomly generated IP address.
+     */
     string generate_IP() {
         ostringstream oss;
         oss << random(1, 255) << "." << random(0, 255) << "." << random(0, 255) << "." << random(1, 255);
         return oss.str();
     }
 
+    /**
+     * @brief Generates a specified number of random requests and populates the request queue.
+     * @param num_requests The number of requests to generate and enqueue.
+     * @param os The output stream for logging (default is std::cout).
+     */
     void generateRequests(size_t num_requests, ostream& os = cout) {
         for (size_t i = 0; i < num_requests; ++i) {
             Request request{this->generate_IP(), this->generate_IP(), this->random(3, 16)};
@@ -42,6 +79,11 @@ private:
         os << "-----------------------------------------------------------------------------\n\n";
     }
 
+    /**
+     * @brief Creates a specified number of server instances.
+     * @param num_servers The number of server instances to create.
+     * @param os The output stream for logging (default is std::cout).
+     */
     void createServers(size_t num_servers, ostream& os = cout) {
         os << "New webservers created: ";
         for (size_t i = 0; i < num_servers; ++i) {
@@ -52,21 +94,52 @@ private:
         }
         os << "\n";
     }
+
 public:
+    /**
+     * @brief Default constructor for the LoadBalancer class.
+     */
     LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {}
-    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests) : runtime{runtime}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
+
+    /**
+     * @brief Parameterized constructor for the LoadBalancer class.
+     * @param runtime The total runtime of the load balancer.
+     * @param num_servers The number of server instances to create.
+     * @param num_requests The number of requests to generate and enqueue.
+     */
+    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests)
+        : runtime{runtime}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
         this->generateRequests(num_requests);
         this->createServers(num_servers);
     }
 
-    LoadBalancer(const LoadBalancer& other) : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests} {}
-    LoadBalancer(LoadBalancer&& other) : runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)}, requests{move(other.requests)} {
+    /**
+     * @brief Copy constructor for the LoadBalancer class.
+     * @param other The load balancer object to copy.
+     */
+    LoadBalancer(const LoadBalancer& other)
+        : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests} {}
+
+    /**
+     * @brief Move constructor for the LoadBalancer class.
+     * @param other The load balancer object to move.
+     */
+    LoadBalancer(LoadBalancer&& other)
+        : runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)}, requests{move(other.requests)} {
         other.runtime = 0;
         other.clock = 0;
     }
 
+    /**
+     * @brief Destructor for the LoadBalancer class.
+     */
     ~LoadBalancer() = default;
 
+    /**
+     * @brief Copy assignment operator for the LoadBalancer class.
+     * @param other The load balancer object to copy.
+     * @return A reference to the current load balancer object after the copy.
+     */
     LoadBalancer& operator=(const LoadBalancer& other) {
         if (this != &other) {
             this->runtime = other.runtime;
@@ -79,6 +152,11 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Move assignment operator for the LoadBalancer class.
+     * @param other The load balancer object to move.
+     * @return A reference to the current load balancer object after the move.
+     */
     LoadBalancer& operator=(LoadBalancer&& other) {
         if (this != &other) {
             this->runtime = other.runtime;
@@ -94,6 +172,10 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Runs the load balancer and manages the distribution of requests to servers.
+     * @param os The output stream for logging (default is std::cout).
+     */
     void run(ostream& os = cout) {
         for (Server& server : this->servers) {
             server.setRequest(this->requests.front());
@@ -116,7 +198,6 @@ public:
                         this->requests.pop();
                     }
                 }
-
             }
             os << "\n";
 
@@ -125,6 +206,10 @@ public:
         }
     }
 
+    /**
+     * @brief Prints the log of handled requests by the load balancer.
+     * @param os The output stream for logging (default is std::cout).
+     */
     void printLog(ostream& os = cout) const {
         for (const auto& [request, server, time] : this->handled)
             os << "At " << to_string(time) << " " << server << " processed request " << request << "\n";
