@@ -18,16 +18,42 @@ private:
 	bool active;
 
 public:
-	Server();
-	Server(const string& name);
-	Server(const Server& other);
-	Server(Server&& other);
-	~Server();
+	Server() : name{string{}}, curr_request{Request{}}, time{0}, active{false} {}
+	Server(const string& name) : name{name}, curr_request{Request{}}, time{0}, active{false} {}
+	Server(const Server& other) : name{other.name}, curr_request{other.curr_request}, time{other.time}, active{other.active} {}
+	Server(Server&& other) : name{move(other.name)}, curr_request{move(other.curr_request)}, time{other.time}, active{other.active} {
+		other.time = 0;
+		other.active = false;
+	}
 
-	Server& operator=(const Server& other);
-	Server& operator=(Server&& other);
+	~Server() = default;
+
+	Server& operator=(const Server& other) {
+		if (this != &other) {
+			this->name = other.name;
+			this->curr_request = other.curr_request;
+			this->time = other.time;
+			this->active = other.active;
+		}
+
+		return *this;
+	}
+
+	Server& operator=(Server&& other) {
+		if (this != &other) {
+			this->name = move(other.name);
+			this->curr_request = move(other.curr_request);
+			this->time = other.time;
+			this->active = other.active;
+			other.time = 0;
+			other.active = false;
+		}
+
+		return *this;
+	}
 
 	void setRequest(const Request& request);
+
 	void setRequest(Request&& request);
 
 	void handleCurrentRequest();

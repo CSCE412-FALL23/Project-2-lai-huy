@@ -19,14 +19,40 @@ private:
     vector<Server> servers;
     vector<tuple<Request, Server, size_t>> handled;
 public:
-    LoadBalancer();
-    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests);
-    LoadBalancer(const LoadBalancer& other);
-    LoadBalancer(LoadBalancer&& other);
-    ~LoadBalancer();
+    LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}} {}
+    LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests) : runtime{runtime}, clock{0}, servers{vector<Server>(num_servers)}, handled{vector<tuple<Request, Server, size_t>>{}} {}
+    LoadBalancer(const LoadBalancer& other) : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled} {}
+    LoadBalancer(LoadBalancer&& other) : runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)} {
+        other.runtime = 0;
+        other.clock = 0;
+    }
 
-    LoadBalancer& operator=(const LoadBalancer& other);
-    LoadBalancer& operator=(LoadBalancer&& other);
+    ~LoadBalancer() = default;
+
+    LoadBalancer& operator=(const LoadBalancer& other) {
+        if (this != &other) {
+            this->runtime = other.runtime;
+            this->clock = other.clock;
+            this->servers = other.servers;
+            this->handled = other.handled;
+        }
+
+        return *this;
+    }
+
+    LoadBalancer& operator=(LoadBalancer&& other) {
+        if (this != &other) {
+            this->runtime = other.runtime;
+            this->clock = other.clock;
+            this->servers = move(other.servers);
+            this->handled = move(other.handled);
+
+            other.runtime = 0;
+            other.clock = 0;
+        }
+
+        return *this;
+    }
 
     void run();
     void printLog(ostream& os = cout) const;
