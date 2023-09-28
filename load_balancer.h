@@ -195,14 +195,12 @@ public:
                 } else {
                     ++finished_count;
                     os << server << " has finished running and is waiting for a new request\n";
-                    if (!this->requests.empty()) {
+                    if (this->requests.empty())
+                        this->generateRequests(this->random(1, 64));
+                    else {
                         this->handled.emplace_back(server.getRequest(), server, this->clock);
                         server.setRequest(this->requests.front());
                         this->requests.pop();
-                    } else {
-                        if (!server.isFinished())
-                            this->handled.emplace_back(server.getRequest(), server, this->clock);
-                        server.clearRequest();
                     }
                 }
             }
