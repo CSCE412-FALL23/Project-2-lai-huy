@@ -36,8 +36,10 @@ private:
 	 */
 	bool active;
 
+	/**
+	 * @brief Indicates wheather the server has finished processing its current request and there are no more requests in the request queue
+	 */
 	bool finished;
-
 public:
 	/**
 	 * @brief Default constructor for the Server class.
@@ -129,6 +131,9 @@ public:
 		this->active = true;
 	}
 
+	/**
+	 * @brief Clears the current request for the server and marks this server as finished.
+	 */
 	void clearRequest() {
 		this->active = false;
 		this->time = 0;
@@ -161,6 +166,11 @@ public:
 		return this->active;
 	}
 
+	/**
+	 * @brief check if the server is finished
+	 *
+	 * @return true if the server is finished, false otherwise.
+	 */
 	bool isFinished() const {
 		return this->finished;
 	}
