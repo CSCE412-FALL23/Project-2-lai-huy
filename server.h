@@ -36,31 +36,34 @@ private:
 	 */
 	bool active;
 
+	bool finished;
+
 public:
 	/**
 	 * @brief Default constructor for the Server class.
 	 */
-	Server() : name{string{}}, curr_request{Request{}}, time{0}, active{false} {}
+	Server() : name{string{}}, curr_request{Request{}}, time{0}, active{false}, finished{false} {}
 
 	/**
 	 * @brief Constructor for the Server class with a specified name.
 	 * @param name The name of the server.
 	 */
-	Server(const string& name) : name{name}, curr_request{Request{}}, time{0}, active{false} {}
+	Server(const string& name) : name{name}, curr_request{Request{}}, time{0}, active{false}, finished{false} {}
 
 	/**
 	 * @brief Copy constructor for the Server class.
 	 * @param other The server object to copy.
 	 */
-	Server(const Server& other) : name{other.name}, curr_request{other.curr_request}, time{other.time}, active{other.active} {}
+	Server(const Server& other) : name{other.name}, curr_request{other.curr_request}, time{other.time}, active{other.active}, finished{other.finished} {}
 
 	/**
 	 * @brief Move constructor for the Server class.
 	 * @param other The server object to move.
 	 */
-	Server(Server&& other) : name{move(other.name)}, curr_request{move(other.curr_request)}, time{other.time}, active{other.active} {
+	Server(Server&& other) : name{move(other.name)}, curr_request{move(other.curr_request)}, time{other.time}, active{other.active}, finished{other.finished} {
 		other.time = 0;
 		other.active = false;
+		other.finished = false;
 	}
 
 	/**
@@ -79,6 +82,7 @@ public:
 			this->curr_request = other.curr_request;
 			this->time = other.time;
 			this->active = other.active;
+			this->finished = other.finished;
 		}
 
 		return *this;
@@ -95,8 +99,11 @@ public:
 			this->curr_request = move(other.curr_request);
 			this->time = other.time;
 			this->active = other.active;
+			this->finished = other.finished;
+
 			other.time = 0;
 			other.active = false;
+			other.finished = false;
 		}
 
 		return *this;
@@ -120,6 +127,12 @@ public:
 		this->curr_request = move(request);
 		this->time = 0;
 		this->active = true;
+	}
+
+	void clearRequest() {
+		this->active = false;
+		this->time = 0;
+		this->finished = true;
 	}
 
 	/**
@@ -146,6 +159,10 @@ public:
 	 */
 	bool isRunning() const {
 		return this->active;
+	}
+
+	bool isFinished() const {
+		return this->finished;
 	}
 
 	/**

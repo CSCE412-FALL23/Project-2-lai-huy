@@ -75,7 +75,7 @@ private:
             os << "New request:\t" << request << "\n";
             this->requests.push(request);
         }
-        os << "Request queue has been populated with " << to_string(num_requests) << " requests.\n";
+        os << "Request queue has been populated with " << to_string(this->requests.size()) << " requests.\n";
         os << "-----------------------------------------------------------------------------\n\n";
     }
 
@@ -118,7 +118,8 @@ public:
      * @param other The load balancer object to copy.
      */
     LoadBalancer(const LoadBalancer& other)
-        : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests} {}
+        : runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests} {
+    }
 
     /**
      * @brief Move constructor for the LoadBalancer class.
@@ -182,6 +183,8 @@ public:
             this->requests.pop();
         }
 
+        // FIX last 10 requests do not get added to the handled vector
+
         size_t finished_count{};
         while (++this->clock <= this->runtime) {
             finished_count = 0;
@@ -192,10 +195,14 @@ public:
                 } else {
                     ++finished_count;
                     os << server << " has finished running and is waiting for a new request\n";
-                    this->handled.emplace_back(server.getRequest(), server, this->clock);
                     if (!this->requests.empty()) {
+                        this->handled.emplace_back(server.getRequest(), server, this->clock);
                         server.setRequest(this->requests.front());
                         this->requests.pop();
+                    } else {
+                        if (!server.isFinished())
+                            this->handled.emplace_back(server.getRequest(), server, this->clock);
+                        server.clearRequest();
                     }
                 }
             }
@@ -212,7 +219,8 @@ public:
      */
     void printLog(ostream& os = cout) const {
         for (const auto& [request, server, time] : this->handled)
-            os << "At " << to_string(time) << " " << server << " processed request " << request << "\n";
+            os << "At " << to_string(time) << " " << server << " processed " << request << "\n";
+        os << "Processed a total of " << to_string(this->handled.size()) << " requests.\n";
     }
 };
 
