@@ -219,7 +219,7 @@ public:
 
 			// Randomly add requests
 			if (!this->random(0, 100))
-				this->generateRequests(1);
+				this->generateRequests(this->random(1, 0x40));
 		}
 	}
 
