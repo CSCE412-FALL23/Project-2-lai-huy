@@ -34,38 +34,38 @@ private:
 	/**
 	 * @brief Indicates whether the server is actively handling a request.
 	 */
-	bool active;
+	bool running;
 
 	/**
-	 * @brief Indicates wheather the server has finished processing its current request and there are no more requests in the request queue
+	 * @brief Indicates whether the server is been marked active by the load balancer.
 	 */
-	bool finished;
+	bool active;
 public:
 	/**
 	 * @brief Default constructor for the Server class.
 	 */
-	Server() : name{string{}}, curr_request{Request{}}, time{0}, active{false}, finished{false} {}
+	Server() : name{string{}}, curr_request{Request{}}, time{0}, running{false}, active{false} {}
 
 	/**
 	 * @brief Constructor for the Server class with a specified name.
 	 * @param name The name of the server.
 	 */
-	Server(const string& name) : name{name}, curr_request{Request{}}, time{0}, active{false}, finished{false} {}
+	Server(const string& name) : name{name}, curr_request{Request{}}, time{0}, running{false}, active{false} {}
 
 	/**
 	 * @brief Copy constructor for the Server class.
 	 * @param other The server object to copy.
 	 */
-	Server(const Server& other) : name{other.name}, curr_request{other.curr_request}, time{other.time}, active{other.active}, finished{other.finished} {}
+	Server(const Server& other) : name{other.name}, curr_request{other.curr_request}, time{other.time}, running{other.running}, active{other.active} {}
 
 	/**
 	 * @brief Move constructor for the Server class.
 	 * @param other The server object to move.
 	 */
-	Server(Server&& other) : name{move(other.name)}, curr_request{move(other.curr_request)}, time{other.time}, active{other.active}, finished{other.finished} {
+	Server(Server&& other) : name{move(other.name)}, curr_request{move(other.curr_request)}, time{other.time}, running{other.running}, active{other.active} {
 		other.time = 0;
+		other.running = false;
 		other.active = false;
-		other.finished = false;
 	}
 
 	/**
@@ -83,8 +83,8 @@ public:
 			this->name = other.name;
 			this->curr_request = other.curr_request;
 			this->time = other.time;
+			this->running = other.running;
 			this->active = other.active;
-			this->finished = other.finished;
 		}
 
 		return *this;
@@ -100,12 +100,12 @@ public:
 			this->name = move(other.name);
 			this->curr_request = move(other.curr_request);
 			this->time = other.time;
+			this->running = other.running;
 			this->active = other.active;
-			this->finished = other.finished;
 
 			other.time = 0;
+			other.running = false;
 			other.active = false;
-			other.finished = false;
 		}
 
 		return *this;
@@ -118,7 +118,7 @@ public:
 	void setRequest(const Request& request) {
 		this->curr_request = request;
 		this->time = 0;
-		this->active = true;
+		this->running = true;
 	}
 
 	/**
@@ -128,16 +128,24 @@ public:
 	void setRequest(Request&& request) {
 		this->curr_request = move(request);
 		this->time = 0;
-		this->active = true;
+		this->running = true;
 	}
 
 	/**
 	 * @brief Clears the current request for the server and marks this server as finished.
 	 */
 	void clearRequest() {
-		this->active = false;
+		this->running = false;
 		this->time = 0;
-		this->finished = true;
+	}
+
+	/**
+	 * @brief Set the Active object
+	 *
+	 * @param active new value of active
+	 */
+	void setActive(bool active) {
+		this->active = active;
 	}
 
 	/**
@@ -147,7 +155,7 @@ public:
 	void handleCurrentRequest(ostream& os = cout) {
 		os << *this << " is handling " << this->curr_request << "\n";
 		if (++this->time == this->curr_request.getDuration())
-			this->active = false;
+			this->running = false;
 	}
 
 	/**
@@ -160,19 +168,19 @@ public:
 
 	/**
 	 * @brief Check if the server is actively handling a request.
-	 * @return true if the server is active, false otherwise.
+	 * @return true if the server is running, false otherwise.
 	 */
 	bool isRunning() const {
-		return this->active;
+		return this->running;
 	}
 
 	/**
-	 * @brief check if the server is finished
+	 * @brief Check if the server is active.
 	 *
-	 * @return true if the server is finished, false otherwise.
+	 * @return true if the server is active, false otherwise.
 	 */
-	bool isFinished() const {
-		return this->finished;
+	bool isActive() const {
+		return this->active;
 	}
 
 	/**

@@ -7,9 +7,10 @@ using std::cout, std::cin, std::getline;
 using std::string;
 
 int main() {
+	srand(0);
 	string user_input{};
-	size_t num_servers;
-	size_t runtime;
+	size_t num_servers{};
+	size_t runtime{};
 
 	cout << "Please enter the number of servers: ";
 	getline(cin, user_input);

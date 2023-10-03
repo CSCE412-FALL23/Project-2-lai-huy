@@ -75,7 +75,7 @@ private:
 			os << "New request:\t" << request << "\n";
 			this->requests.push(request);
 		}
-		os << "Request queue has been populated with " << to_string(this->requests.size()) << " requests.\n";
+		os << "Request queue has been populated with " << to_string(num_requests) << " requests.\n";
 		os << "-----------------------------------------------------------------------------\n\n";
 	}
 
@@ -174,40 +174,52 @@ public:
 	}
 
 	/**
+	 * @brief Assign a request to a server
+	 *
+	 * @param server server to assign a request to
+	 */
+	void assignRequest(Server& server) {
+		server.setRequest(this->requests.front());
+		this->requests.pop();
+	}
+
+	/**
 	 * @brief Runs the load balancer and manages the distribution of requests to servers.
 	 * @param os The output stream for logging (default is std::cout).
 	 */
 	void run(ostream& os = cout) {
 		for (Server& server : this->servers) {
-			server.setRequest(this->requests.front());
-			this->requests.pop();
+			server.setActive(true);
+			this->assignRequest(server);
 		}
 
-		// FIX last 10 requests do not get added to the handled vector
-
-		size_t finished_count{};
 		while (++this->clock <= this->runtime) {
-			finished_count = 0;
 			os << "Clock:\t" << this->clock << "\n";
 			for (Server& server : this->servers) {
 				if (server.isRunning()) {
 					server.handleCurrentRequest();
 				} else {
-					++finished_count;
-					os << server << " has finished running and is waiting for a new request\n";
-					if (this->requests.empty())
-						this->generateRequests(this->random(1, 64));
-					else {
+					if (server.isActive()) {
 						this->handled.emplace_back(server.getRequest(), server, this->clock);
-						server.setRequest(this->requests.front());
-						this->requests.pop();
+						if (this->requests.empty()) {
+							server.setActive(false);
+							os << server << " deactivated.\n";
+						} else
+							this->assignRequest(server);
+						os << server << " has finished running and is waiting for a new request.\n";
+						os << server.getRequest() << " marked as finished.\n";
+					} else if (!this->requests.empty()) {
+						server.setActive(true);
+						this->assignRequest(server);
 					}
 				}
 			}
+
 			os << "\n";
 
-			if (finished_count == this->servers.size())
-				break;
+			// Randomly add requests
+			if (!this->random(0, 100))
+				this->generateRequests(1);
 		}
 	}
 
