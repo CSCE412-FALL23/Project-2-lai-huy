@@ -70,12 +70,19 @@ private:
 	 * @param os The output stream for logging (default is std::cout).
 	 */
 	void generateRequests(size_t num_requests, ostream& os = cout) {
+		size_t num_generated{};
 		for (size_t i = 0; i < num_requests; ++i) {
+			if (this->requests.size() + 1 > this->servers.size() * 5) {
+				os << "Too many incomming requests. Rejected " << to_string(num_requests - i) << " incomming request(s).\n";
+				break;
+			}
+
 			Request request{this->generate_IP(), this->generate_IP(), this->random(3, 16)};
 			os << "New request:\t" << request << "\n";
 			this->requests.push(request);
+			++num_generated;
 		}
-		os << "Request queue has been populated with " << to_string(num_requests) << " requests.\n";
+		os << "Request queue has been populated with " << to_string(num_generated) << " requests.\n";
 		os << "-----------------------------------------------------------------------------\n\n";
 	}
 
@@ -109,8 +116,8 @@ public:
 	 */
 	LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests)
 		: runtime{runtime}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
-		this->generateRequests(num_requests);
 		this->createServers(num_servers);
+		this->generateRequests(num_requests);
 	}
 
 	/**
