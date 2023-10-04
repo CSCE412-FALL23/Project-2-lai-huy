@@ -247,6 +247,7 @@ public:
 	void printLog(ostream& os = cout) const {
 		for (const auto& [request, server, time] : this->handled)
 			os << "At " << to_string(time) << " " << server << " processed " << request << "\n";
+
 		os << "Processed a total of " << to_string(this->handled.size()) << " requests.\n";
 		os << "Rejected a total of " << to_string(this->rejected_requests) << " requests.\n";
 	}
