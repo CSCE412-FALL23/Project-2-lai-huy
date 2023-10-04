@@ -21,6 +21,11 @@ int main() {
 	runtime = stoul(user_input);
 
 	//start the load balancer
+	cout << "-------------------------------------------------------\n";
+	cout << "Starting queue size: " << to_string(num_servers * 5) << "\n";
+	cout << "Clock cycles: " << to_string(runtime) << "\n";
+	cout << "Range for request time: 3-16 clock cycles\n";
+	cout << "-------------------------------------------------------\n";
 	cout << "Starting load balancer...\n";
 	LoadBalancer loadbalancer(runtime, num_servers, num_servers * 5);
 	loadbalancer.run();

@@ -45,6 +45,11 @@ private:
 	queue<Request> requests;
 
 	/**
+	 * @brief the number of rejected requests
+	 */
+	size_t rejected_requests;
+
+	/**
 	 * @brief Generates a random number between min and max (inclusive).
 	 * @param min The minimum value of the range.
 	 * @param max The maximum value of the range.
@@ -73,6 +78,7 @@ private:
 		size_t num_generated{};
 		for (size_t i = 0; i < num_requests; ++i) {
 			if (this->requests.size() + 1 > this->servers.size() * 5) {
+				this->rejected_requests += (num_requests - i);
 				os << "Too many incomming requests. Rejected " << to_string(num_requests - i) << " incomming request(s).\n";
 				break;
 			}
@@ -106,7 +112,7 @@ public:
 	/**
 	 * @brief Default constructor for the LoadBalancer class.
 	 */
-	LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {}
+	LoadBalancer() : runtime{0}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}}, rejected_requests{0} {}
 
 	/**
 	 * @brief Parameterized constructor for the LoadBalancer class.
@@ -115,7 +121,7 @@ public:
 	 * @param num_requests The number of requests to generate and enqueue.
 	 */
 	LoadBalancer(size_t runtime, size_t num_servers, size_t num_requests)
-		: runtime{runtime}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}} {
+		: runtime{runtime}, clock{0}, servers{vector<Server>{}}, handled{vector<tuple<Request, Server, size_t>>{}}, requests{queue<Request>{}}, rejected_requests{0} {
 		this->createServers(num_servers);
 		this->generateRequests(num_requests);
 	}
@@ -125,7 +131,7 @@ public:
 	 * @param other The load balancer object to copy.
 	 */
 	LoadBalancer(const LoadBalancer& other)
-		: runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests} {
+		: runtime{other.runtime}, clock{other.clock}, servers{other.servers}, handled{other.handled}, requests{other.requests}, rejected_requests{other.rejected_requests} {
 	}
 
 	/**
@@ -133,9 +139,10 @@ public:
 	 * @param other The load balancer object to move.
 	 */
 	LoadBalancer(LoadBalancer&& other)
-		: runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)}, requests{move(other.requests)} {
+		: runtime{other.runtime}, clock{other.clock}, servers{move(other.servers)}, handled{move(other.handled)}, requests{move(other.requests)}, rejected_requests{other.rejected_requests} {
 		other.runtime = 0;
 		other.clock = 0;
+		other.rejected_requests = 0;
 	}
 
 	/**
@@ -155,6 +162,7 @@ public:
 			this->servers = other.servers;
 			this->handled = other.handled;
 			this->requests = other.requests;
+			this->rejected_requests = other.rejected_requests;
 		}
 
 		return *this;
@@ -172,9 +180,11 @@ public:
 			this->servers = move(other.servers);
 			this->handled = move(other.handled);
 			this->requests = move(other.requests);
+			this->rejected_requests = other.rejected_requests;
 
 			other.runtime = 0;
 			other.clock = 0;
+			other.rejected_requests = 0;
 		}
 
 		return *this;
@@ -238,6 +248,7 @@ public:
 		for (const auto& [request, server, time] : this->handled)
 			os << "At " << to_string(time) << " " << server << " processed " << request << "\n";
 		os << "Processed a total of " << to_string(this->handled.size()) << " requests.\n";
+		os << "Rejected a total of " << to_string(this->rejected_requests) << " requests.\n";
 	}
 };
 
